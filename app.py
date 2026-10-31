@@ -49,7 +49,7 @@ if chat_input:
     with st.chat_message("assistant"):
         with st.spinner("Elaborazione in corso... Non che ci voglia molto."):
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4o-mini",
                 messages=[
                     {"role": m["role"], "content": m["content"]}
                     for m in st.session_state.messages
