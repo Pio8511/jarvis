@@ -1,9 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-import speech_recognition as sr
-from gtts import gTTS
 import os
-import base64
 
 # Configurazione della pagina
 st.set_page_config(page_title="J.A.R.V.I.S.", page_icon="🤖", layout="centered")
@@ -15,7 +12,7 @@ else:
     st.error("Chiave API di OpenAI non trovata nelle impostazioni segrete di Streamlit, Signore.")
     st.stop()
 
-# Intestazione formale e leggermente sarcastica
+# Intestazione formale e sarcastica
 st.markdown("<h1 style='text-align: center;'>J.A.R.V.I.S.</h1>", unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: gray;'>Online. Al vostro servizio, Signore (se proprio devo).</p>", unsafe_allow_html=True)
 
@@ -39,50 +36,14 @@ for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-# --- GESTIONE VOCALE (Registrazione simulata / Input audio) ---
-st.markdown("---")
-st.subheader("Interazione Vocale")
-
-# Streamlit audio input nativo (disponibile nelle versioni recenti per mobile/desktop)
-audio_bytes = st.audio_input("Parla con J.A.R.V.I.S.")
-
-user_input = None
-
-if audio_bytes is not None:
-    # Salviamo temporaneamente l'audio registrato
-    audio_file_path = "temp_audio.wav"
-    with open(audio_file_path, "wb") as f:
-        f.write(audio_bytes.read())
-    
-    # Riconoscimento vocale tramite SpeechRecognition
-    r = sr.Recognizer()
-    try:
-        with sr.AudioFile(audio_file_path) as source:
-            audio_data = r.record(source)
-            text_recognized = r.recognize_google(audio_data, language="it-IT")
-            user_input = text_recognized
-            st.success(recognized_text := f"Avete detto: \"{text_recognized}\"")
-    except sr.UnknownValueError:
-        st.warning("Non ho udito alcuna parola intelligibile, Signore. Forse dovreste articolare meglio.")
-    except sr.RequestError:
-        st.error("Il servizio di riconoscimento vocale non è al momento disponibile.")
-    
-    # Pulizia del file temporaneo
-    if os.path.exists(audio_file_path):
-        os.remove(audio_file_path)
-
-# Input testuale tradizionale come alternativa
+# Input testuale della chat
 chat_input = st.chat_input("A cosa sto pensando, Signore?")
 
 if chat_input:
-    user_input = chat_input
-
-# Se c'è un input valido (vocale o testuale)
-if user_input:
     # Aggiungi il messaggio dell'utente alla cronologia
-    st.session_state.messages.append({"role": "user", "content": user_input})
+    st.session_state.messages.append({"role": "user", "content": chat_input})
     with st.chat_message("user"):
-        st.markdown(user_input)
+        st.markdown(chat_input)
 
     # Generazione della risposta di Jarvis
     with st.chat_message("assistant"):
@@ -94,26 +55,9 @@ if user_input:
                     for m in st.session_state.messages
                 ]
             )
-            assistant_reply = response.choices.message.content
+            assistant_reply = response.choices[0].message.content
             st.markdown(assistant_reply)
-            
-            # Sintesi vocale (gTTS)
-            tts = gTTS(text=assistant_reply, lang='it')
-            speech_file = "jarvis_reply.mp3"
-            tts.save(speech_file)
-            
-            # Riproduzione audio automatica
-            audio_file = open(speech_file, 'rb')
-            audio_bytes_out = audio_file.read()
-            audio_base64 = base64.b64encode(audio_bytes_out).decode()
-            audio_tag = f'<audio autoplay="true" src="data:audio/mp3;base64,{audio_base64}">'
-            st.markdown(audio_tag, unsafe_allow_html=True)
-            audio_file.close()
-            
-            if os.path.exists(speech_file):
-                os.remove(speech_file)
 
     # Salva la risposta nella cronologia
     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
-
-  
+    
