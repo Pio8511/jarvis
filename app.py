@@ -1,4 +1,5 @@
-import streamlit as st
+
+   import streamlit as st
 from openai import OpenAI
 import os
 
@@ -60,4 +61,4 @@ if chat_input:
 
     # Salva la risposta nella cronologia
     st.session_state.messages.append({"role": "assistant", "content": assistant_reply})
-    
+ 
